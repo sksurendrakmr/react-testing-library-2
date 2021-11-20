@@ -1,6 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { SignUpPage } from "../components/SignUpPage";
+import userEvent from "@testing-library/user-event";
+import axios from "axios";
 
 describe("Sign Up Page", () => {
   test("should render header ", () => {
@@ -50,5 +52,45 @@ describe("Sign Up Page", () => {
     render(<SignUpPage />);
     const submitButton = screen.getByRole("button", { name: /sign up/i });
     expect(submitButton).toBeDisabled();
+  });
+  describe("Interactions", () => {
+    test("should enables signup button when password and confirm password fields have same values ", () => {
+      render(<SignUpPage />);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput =
+        screen.getByPlaceholderText(/confirm password/i);
+      userEvent.type(passwordInput, "surendra");
+      userEvent.type(confirmPasswordInput, "surendra");
+      const signupButton = screen.getByRole("button", { name: /sign up/i });
+      expect(signupButton).toBeEnabled();
+    });
+  });
+
+  describe("api request", () => {
+    test("fill all the input fields and request for signup", () => {
+      render(<SignUpPage />);
+      const userNameInput = screen.getByLabelText(/username/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+      const signupButton = screen.getByRole("button", { name: /sign up/i });
+
+      userEvent.type(userNameInput, "user");
+      userEvent.type(emailInput, "a@gmail.com");
+      userEvent.type(passwordInput, "surendra");
+      userEvent.type(confirmPasswordInput, "surendra");
+
+      const mockFn = jest.fn();
+      axios.post = mockFn;
+
+      userEvent.click(signupButton);
+      const requestBody = mockFn.mock.calls[0][1];
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(requestBody).toEqual({
+        username: "user",
+        email: "a@gmail.com",
+        password: "surendra",
+      });
+    });
   });
 });
